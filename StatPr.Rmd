@@ -1,0 +1,306 @@
+---
+title: 'PCA, FA and Clustering - Project in Statistics'
+output:
+  html_document:
+    df_print: paged
+---
+
+## Learning outcomes
+
+In this notebook we will find out what it's like to "play" with big data tables with a lot of variables, cluster them using the k-means process and perform Principal Component and Factor Analysis.
+
+Also, we will see how to create beautiful graphs and draw heated maps.
+
+## Install required packages
+
+```{r eval=FALSE}
+install.packages("tidyverse")
+install.packages("mosaic")
+install.packages("ggplot2")
+install.packages("moments")
+install.packages("sjlabelled")
+install.packages("Hmisc")
+install.packages("googledrive")
+```
+
+## Load required packages
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+library(tidyverse)
+library(GGally)
+library(dplyr)
+library(factoextra)
+library(rworldmap)
+library(countrycode)
+library(googledrive)
+```
+
+
+## Import the dataset. Remeber it's better to have your data in .csv format!
+
+```{r eval=FALSE}
+dat <- read.csv("WBD 1.csv", header = TRUE)
+View(dat)
+# We want to see how many rows our dataset has
+nrow(dat)
+```
+
+
+## Given the fact that we are using the whole world as datasample we cannot hace more than 217 rows as there are 217 countries in WB database.
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+## For example we can see below that on row 218, all columns included, the country is "Arab World"
+dat.218 <- dat[218, ]
+dat.218
+## A second example is the row 250, all columns included, where it corresponds to the "North America" region
+dat.250 <- dat[250, ]
+dat.250
+```
+
+
+## Since we have regions apart from countries we have to eliminate rows 218 until 269 #
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+## First we create a subset of the last 52 rows and sum them to see what are the regions that are not single countries that have to be deleted.
+dat.last52 <- dat[218:269, ]
+str(dat.last52)
+### Now we can remove the separated dataframe from the original dataset and obtain our desired dataframe to work with
+dat.remove.last52 <- dat[-c(218:269), ]
+
+```
+
+
+## Rename the new dataframe. This is now the dataset we will work with after clearing the missing values
+
+```{r eval=FALSE}
+WBD <- dat.remove.last52[1:217, ]
+```
+
+
+## Are there any Missing Values?
+
+```{r eval=FALSE}
+# Since our mising values are denoted as ".." we have to rename them as "NA" in order to eliminate them.
+WBD[WBD==".."] = NA
+
+# We test to see if we have any missing values, now that we have changed the notation properly.
+is.na(WBD)
+
+# It is useful to see how many NA's we have in our dataframe. 
+sum(is.na(WBD[]))
+
+# We can observe that all of the rows contain at least on missing "NA" value. Thus the option complete.cases is not useful as we will have 0 observations after 
+# the cleaning process.
+# With colSums we can see how many missing variables we have on each column and decide how to eliminate them according to the weight of our variables.
+colSums(is.na(WBD))
+```
+
+
+## Dealing with the missing values. Elimination Process
+
+```{r eval=FALSE}
+#First we see how many rows we have now so to compare how much our dataset will shrink
+nrow(WBD)
+
+# We create a dataframe with all the rows and transfer across columns that have less than 100 missing values
+WBD.clean1 <- WBD[ ,colSums(is.na(WBD))<100]
+# Then we strip out the NA's and summarize the final sample we will work with
+WBD.clean.final <- na.omit(WBD.clean1)
+# Our dataframe slightly drops in observations but this is completely rational given the fact that the development indexes we chose are not available for the African Continent.
+nrow(WBD.clean.final)
+
+# We test to see if there are still any missing data in our dataframe. It turns out a logical var (TRUE or FALSE) to indicate the presence of "NA's".
+any(is.na(WBD.clean.final[]))
+
+str(WBD.clean.final)
+```
+
+
+## We  rename our variables to plot easier and provie more clear information
+
+```{r eval=FALSE}
+WBD.final <- WBD.clean.final %>% rename("Year" = Time, "Country"=`Country Name`, "Female Employers (% of female employment)" = `Employers, female (% of female employment) (modeled ILO estimate) [SL.EMP.MPYR.FE.ZS]`, "Male Employers (% of male employment)" = `Employers, male (% of male employment) (modeled ILO estimate) [SL.EMP.MPYR.MA.ZS]`, "Employment in industry, male (% of male employment)" = `Employment in industry, male (% of male employment) (modeled ILO estimate) [SL.IND.EMPL.MA.ZS]` , "Employment in industry, female (% of female employment)" = `Employment in industry, female (% of female employment) (modeled ILO estimate) [SL.IND.EMPL.FE.ZS]` , "GDP (current US$)" = `GDP (current US$) [NY.GDP.MKTP.CD]` , "GDP per capita (current US$)" = `GDP per capita (current US$) [NY.GDP.PCAP.CD]` , "GDP per capita growth (annual %)" = `GDP per capita growth (annual %) [NY.GDP.PCAP.KD.ZG]` , "Population ages 65 and above (total)" = `Population ages 65 and above, total [SP.POP.65UP.TO]` , "Population ages 65 and above (% of total population)" = `Population ages 65 and above (% of total population) [SP.POP.65UP.TO.ZS]` , "Population ages 65 and above, female (% of female population)" = `Population ages 65 and above, female (% of female population) [SP.POP.65UP.FE.ZS]` , "Population ages 65 and above, male (% of male population)" = `Population ages 65 and above, male (% of male population) [SP.POP.65UP.MA.ZS]` , "Population growth (annual %)" = `Population growth (annual %) [SP.POP.GROW]` , "Start-up procedures to register a business (number)" = `Start-up procedures to register a business (number) [IC.REG.PROC]` , "Urban population growth (annual %)" = `Urban population growth (annual %) [SP.URB.GROW]` , "Urban population (% of total population)" = `Urban population (% of total population) [SP.URB.TOTL.IN.ZS]`) 
+
+```
+
+
+## Basic Descriptive statistics
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+dim(WBD.final)
+str(WBD.final)
+
+# A more detailed summary option 
+glimpse(WBD.final)
+```
+
+
+## Our variables are depicted as factors, thus we convert them all into numericals.
+
+```{r eval=FALSE}
+WBD.final$Year <- as.numeric(WBD.final$Year)
+WBD.final$`Male Employers (% of male employment)` <- as.numeric(WBD.final$`Male Employers (% of male employment)`)
+WBD.final$`Employment in industry, male (% of male employment)` <- as.numeric(WBD.final$`Employment in industry, male (% of male employment)`)
+WBD.final$`Employment in industry, female (% of female employment)` <- as.numeric(WBD.final$`Employment in industry, female (% of female employment)`)
+WBD.final$Country <- as.character(WBD.final$Country)
+WBD.final$`Female Employers (% of female employment)` <- as.numeric(WBD.final$`Female Employers (% of female employment)`)
+WBD.final$`GDP (current US$)` <- as.numeric(WBD.final$`GDP (current US$)`)
+WBD.final$`GDP per capita (current US$)` <- as.numeric(WBD.final$`GDP per capita (current US$)`)
+WBD.final$`GDP per capita growth (annual %)` <- as.numeric(WBD.final$`GDP per capita growth (annual %)`)
+WBD.final$`Population ages 65 and above (% of total population)` <- as.numeric(WBD.final$`Population ages 65 and above (% of total population)`)
+WBD.final$`Population ages 65 and above, female (% of female population)` <- as.numeric(WBD.final$`Population ages 65 and above, female (% of female population)`)
+WBD.final$`Population ages 65 and above, male (% of male population)` <- as.numeric(WBD.final$`Population ages 65 and above, male (% of male population)`)
+WBD.final$`Population ages 65 and above (total)` <- as.numeric(WBD.final$`Population ages 65 and above (total)`)
+WBD.final$`Population growth (annual %)` <- as.numeric(WBD.final$`Population growth (annual %)`)
+WBD.final$`Start-up procedures to register a business (number)` <- as.numeric(WBD.final$`Start-up procedures to register a business (number)`)
+WBD.final$`Urban population growth (annual %)` <- as.numeric(WBD.final$`Urban population growth (annual %)`)
+WBD.final$`Urban population (% of total population)` <- as.numeric(WBD.final$`Urban population (% of total population)`)
+
+str(WBD.final)
+```
+
+
+## Construct logs for large numbers such as GDP and Pop over 65
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+WBD.finalm = WBD.final
+WBD.finalm[,10] = log(WBD.final[,10]) #GDP {log}
+WBD.finalm[,11] = log(WBD.final[,11]) #GDP {log}
+WBD.finalm[,13] = log(WBD.final[,13]) #Pop over 65 {log}
+```
+
+
+## Basic Descriptive statistics
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+dim(WBD.final)
+str(WBD.final)
+```
+
+
+## A more detailed summary option
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+glimpse(WBD.final)
+```
+
+
+####################################################################################################
+###################################### Plots, Pies and Graphs ######################################
+####################################################################################################
+
+
+## Basic Histogram 
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+plot(WBD.final$`Female Employers (% of female employment)`, WBD.final$`GDP per capita (current US$)`, xlab = "Female Empl", ylab = "GDPPC", frame.plot = FALSE, pch = 19, col = "blue"  )
+plot(WBD.finalm$`GDP (current US$)`, WBD.finalm$`Start-up procedures to register a business (number)`, xlab = "Female Employers", ylab = "Start-up procedures to register a business (number)", frame.plot = FALSE, pch = 19, col = "blue"  )
+```
+
+
+## Basic Boxplot
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+boxplot(WBD.finalm[,6:20], las=2, col=rainbow(20))
+```
+
+
+
+## We plot GDPPC with urban population as a % of the total population of a country to see the correlation between the 2 variables
+
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(x=`GDP per capita (current US$)`, y= `Urban population (% of total population)`)) + geom_point() + labs(title="Countries", x="GDP per capita (current US$)", y="Urban population (% of total population)") + theme(legend.position="bottom")
+```
+
+
+## Basic Boxplot
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+boxplot(WBD.finalm[,6:20], las=2, col=rainbow(20))
+```
+
+
+## Plot with GDPPC and Urban Population:
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(x = `GDP per capita (current US$)`, y = `Urban population (% of total population)`, color = Region, size=`GDP (current US$)`/1e5)) + geom_point() + 
+  scale_color_brewer(palette="Dark2")+ xlab("GDP per capita (current US$)") + ylab("Urban population (% of total population)")+theme_minimal()+ theme(legend.position="bottom")
+```
+
+
+## Other Plot with Female Employers (% of female employment) and Start-up procedures to register a business (number):
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(x = `Female Employers (% of female employment)`, y = `Start-up procedures to register a business (number)`, color = Region, size=`GDP (current US$)`/1e5)) + geom_point() + 
+  scale_color_brewer(palette="BrBG")+ xlab("GDP per capita (current US$)") + ylab("Urban population (% of total population)")+theme_minimal()+ theme(legend.position="bottom")
+```
+
+
+## GDPPC and Urban Pop plots:
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(`GDP per capita (current US$)`)) + geom_density(aes(group=Region, colour=Region, fill=Region), alpha=0.1) +xlab("GDP per capita (current US$)")
+ggplot(WBD.finalm, aes(`Urban population (% of total population)`)) + geom_density(aes(group=Region, colour=Region, fill=Region), alpha=0.1) +xlab("Urban population (% of total population)")
+```
+
+
+## Pop>65 plot:
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(`Population ages 65 and above (total)`)) + geom_density(aes(group=Region, colour=Region, fill=Region), alpha=0.1) +xlab("Population ages 65 and above (total)")
+```
+
+
+## Male Empl plot:
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(`Male Employers (% of male employment)`)) + geom_density(aes(group=Region, colour=Region, fill=Region), alpha=0.1) +xlab("Male Employers (% of male employment)") 
+```
+
+
+## Other relationship: Pop over 65 and GDPPC
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(x = `Population ages 65 and above (total)`, y = `GDP per capita (current US$)`, color=Region, label=Country)) + geom_text(size=2, check_overlap = TRUE) +
+  theme_bw() + theme(legend.position="bottom")
+```
+
+
+## Other relationship: Pop over 65 and GDP
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+
+```
+
+
+## Other relationship: Male and Female Employers
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(x = `Male Employers (% of male employment)`, y = `Female Employers (% of female employment)`, color=Region, label=Country)) + geom_text(size=2, check_overlap = TRUE) +
+  theme_bw() + theme(legend.position="bottom")
+```
+
+
+## Plot separated according the regions
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggplot(WBD.finalm, aes(x = `GDP per capita (current US$)`, y = `Urban population (% of total population)`, color=`Population growth (annual %)`,size=`GDP (current US$)`)) +
+  geom_point() + facet_wrap(~ Region) + scale_color_gradient(low="red", high="blue")+labs(title="Countries by region", x="GDP per Capita", y="Urban Population", colour="Annual Pop Growth (%)")+theme_minimal()+ theme(legend.position="bottom")
+```
+
+
+## Relations in dimension 2: bivariate analysis using scatter plots; multiple scatter plot: partial and all relations in dimension 2
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+pairs(WBD.finalm[,6:13],pch=19,col=WBD.finalm$Region)
+pairs(WBD.finalm[,13:20],pch=19,col=WBD.finalm$Region)
+pairs(WBD.finalm[,6:20],pch=19,col=WBD.finalm$Region)
+```
+
+
+## Correlation Graph
+
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+ggcorr(WBD.finalm, label = T, palette = "BrBG")+labs(title = "Correlations")
+```

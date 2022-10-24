@@ -3,13 +3,21 @@
 ######################################################################################### 
 
 #Install the packages we need
+install.packages("tidyverse")
+install.packages("mosaic")
+install.packages("ggplot2")
+install.packages("moments")
+install.packages("sjlabelled")
+install.packages("Hmisc")
+install.packages("PB130")
+
+#Call the libraries
 library(tidyverse)
 library(GGally)
 library(dplyr)
 library(factoextra)
 library(rworldmap)
 library(countrycode)
-
 
 # First Step: Import databse downloaded form the World Bank Database
 dat = read.csv("WBD 1.csv", header = TRUE)
@@ -74,7 +82,7 @@ str(WBD.clean.final)
 
 
 # We rename our variables to plot easier and provie more clear information
-WBD.final <-WBD.clean.final %>% rename("Year" = Time, "Country" = Country.Name , "Female Employers (% of female employment)" = Employers..female....of.female.employment...modeled.ILO.estimate...SL.EMP.MPYR.FE.ZS. ,  "Male Employers (% of male employment)" = Employers..male....of.male.employment...modeled.ILO.estimate...SL.EMP.MPYR.MA.ZS. , "Employment in industry, male (% of male employment)" = Employment.in.industry..male....of.male.employment...modeled.ILO.estimate...SL.IND.EMPL.MA.ZS. , "Employment in industry, female (% of female employment)" = Employment.in.industry..female....of.female.employment...modeled.ILO.estimate...SL.IND.EMPL.FE.ZS. , "GDP (current US$)" = GDP..current.US....NY.GDP.MKTP.CD. , "GDP per capita (current US$)" = GDP.per.capita..current.US....NY.GDP.PCAP.CD. , "GDP per capita growth (annual %)" = GDP.per.capita.growth..annual.....NY.GDP.PCAP.KD.ZG. , "Population ages 65 and above (total)" = Population.ages.65.and.above..total..SP.POP.65UP.TO. , "Population ages 65 and above (% of total population)" = Population.ages.65.and.above....of.total.population...SP.POP.65UP.TO.ZS. , "Population ages 65 and above, female (% of female population)" = Population.ages.65.and.above..female....of.female.population...SP.POP.65UP.FE.ZS. , "Population ages 65 and above, male (% of male population)" = Population.ages.65.and.above..male....of.male.population...SP.POP.65UP.MA.ZS. , "Population growth (annual %)" = Population.growth..annual.....SP.POP.GROW. , "Start-up procedures to register a business (number)" = Start.up.procedures.to.register.a.business..number...IC.REG.PROC. , "Urban population growth (annual %)" = Urban.population.growth..annual.....SP.URB.GROW. , "Urban population (% of total population)" = Urban.population....of.total.population...SP.URB.TOTL.IN.ZS.) 
+WBD.final <- WBD.clean.final %>% rename("Year" = Time, "Country"=`Country Name`, "Female Employers (% of female employment)" = `Employers, female (% of female employment) (modeled ILO estimate) [SL.EMP.MPYR.FE.ZS]`, "Male Employers (% of male employment)" = `Employers, male (% of male employment) (modeled ILO estimate) [SL.EMP.MPYR.MA.ZS]`, "Employment in industry, male (% of male employment)" = `Employment in industry, male (% of male employment) (modeled ILO estimate) [SL.IND.EMPL.MA.ZS]` , "Employment in industry, female (% of female employment)" = `Employment in industry, female (% of female employment) (modeled ILO estimate) [SL.IND.EMPL.FE.ZS]` , "GDP (current US$)" = `GDP (current US$) [NY.GDP.MKTP.CD]` , "GDP per capita (current US$)" = `GDP per capita (current US$) [NY.GDP.PCAP.CD]` , "GDP per capita growth (annual %)" = `GDP per capita growth (annual %) [NY.GDP.PCAP.KD.ZG]` , "Population ages 65 and above (total)" = `Population ages 65 and above, total [SP.POP.65UP.TO]` , "Population ages 65 and above (% of total population)" = `Population ages 65 and above (% of total population) [SP.POP.65UP.TO.ZS]` , "Population ages 65 and above, female (% of female population)" = `Population ages 65 and above, female (% of female population) [SP.POP.65UP.FE.ZS]` , "Population ages 65 and above, male (% of male population)" = `Population ages 65 and above, male (% of male population) [SP.POP.65UP.MA.ZS]` , "Population growth (annual %)" = `Population growth (annual %) [SP.POP.GROW]` , "Start-up procedures to register a business (number)" = `Start-up procedures to register a business (number) [IC.REG.PROC]` , "Urban population growth (annual %)" = `Urban population growth (annual %) [SP.URB.GROW]` , "Urban population (% of total population)" = `Urban population (% of total population) [SP.URB.TOTL.IN.ZS]`) 
 
 # Basic Descriptive statistics
 dim(WBD.final)
@@ -84,27 +92,27 @@ str(WBD.final)
 glimpse(WBD.final)
 
 # Our variables are depicted as factors, thus we convert them all into numericals.
-WBD.final$Year <- as.numeric(levels(WBD.final$Year))[WBD.final$Year]
-WBD.final$`Male Employers (% of male employment)` <- as.numeric(levels(WBD.final$`Male Employers (% of male employment)`))[WBD.final$`Male Employers (% of male employment)`]
-WBD.final$`Employment in industry, male (% of male employment)` <- as.numeric(levels(WBD.final$`Employment in industry, male (% of male employment)`))[WBD.final$`Employment in industry, male (% of male employment)`]
-WBD.final$`Employment in industry, female (% of female employment)` <- as.numeric(levels(WBD.final$`Employment in industry, female (% of female employment)`))[WBD.final$`Employment in industry, female (% of female employment)`]
+WBD.final$Year <- as.numeric(WBD.final$Year)
+WBD.final$`Male Employers (% of male employment)` <- as.numeric(WBD.final$`Male Employers (% of male employment)`)
+WBD.final$`Employment in industry, male (% of male employment)` <- as.numeric(WBD.final$`Employment in industry, male (% of male employment)`)
+WBD.final$`Employment in industry, female (% of female employment)` <- as.numeric(WBD.final$`Employment in industry, female (% of female employment)`)
 WBD.final$Country <- as.character(WBD.final$Country)
-WBD.final$`Female Employers (% of female employment)` <- as.numeric(levels(WBD.final$`Female Employers (% of female employment)`))[WBD.final$`Female Employers (% of female employment)`]
-WBD.final$`GDP (current US$)` <- as.numeric(levels(WBD.final$`GDP (current US$)`))[WBD.final$`GDP (current US$)`]
-WBD.final$`GDP per capita (current US$)` <- as.numeric(levels(WBD.final$`GDP per capita (current US$)`))[WBD.final$`GDP per capita (current US$)`]
-WBD.final$`GDP per capita growth (annual %)` <- as.numeric(levels(WBD.final$`GDP per capita growth (annual %)`))[WBD.final$`GDP per capita growth (annual %)`]
-WBD.final$`Population ages 65 and above (% of total population)` <- as.numeric(levels(WBD.final$`Population ages 65 and above (% of total population)`))[WBD.final$`Population ages 65 and above (% of total population)`]
-WBD.final$`Population ages 65 and above, female (% of female population)` <- as.numeric(levels(WBD.final$`Population ages 65 and above, female (% of female population)`))[WBD.final$`Population ages 65 and above, female (% of female population)`]
-WBD.final$`Population ages 65 and above, male (% of male population)` <- as.numeric(levels(WBD.final$`Population ages 65 and above, male (% of male population)`))[WBD.final$`Population ages 65 and above, male (% of male population)`]
-WBD.final$`Population ages 65 and above (total)` <- as.numeric(levels(WBD.final$`Population ages 65 and above (total)`))[WBD.final$`Population ages 65 and above (total)`]
-WBD.final$`Population growth (annual %)` <- as.numeric(levels(WBD.final$`Population growth (annual %)`))[WBD.final$`Population growth (annual %)`]
-WBD.final$`Start-up procedures to register a business (number)` <- as.numeric(levels(WBD.final$`Start-up procedures to register a business (number)`))[WBD.final$`Start-up procedures to register a business (number)`]
-WBD.final$`Urban population growth (annual %)` <- as.numeric(levels(WBD.final$`Urban population growth (annual %)`))[WBD.final$`Urban population growth (annual %)`]
-WBD.final$`Urban population (% of total population)` <- as.numeric(levels(WBD.final$`Urban population (% of total population)`))[WBD.final$`Urban population (% of total population)`]
+WBD.final$`Female Employers (% of female employment)` <- as.numeric(WBD.final$`Female Employers (% of female employment)`)
+WBD.final$`GDP (current US$)` <- as.numeric(WBD.final$`GDP (current US$)`)
+WBD.final$`GDP per capita (current US$)` <- as.numeric(WBD.final$`GDP per capita (current US$)`)
+WBD.final$`GDP per capita growth (annual %)` <- as.numeric(WBD.final$`GDP per capita growth (annual %)`)
+WBD.final$`Population ages 65 and above (% of total population)` <- as.numeric(WBD.final$`Population ages 65 and above (% of total population)`)
+WBD.final$`Population ages 65 and above, female (% of female population)` <- as.numeric(WBD.final$`Population ages 65 and above, female (% of female population)`)
+WBD.final$`Population ages 65 and above, male (% of male population)` <- as.numeric(WBD.final$`Population ages 65 and above, male (% of male population)`)
+WBD.final$`Population ages 65 and above (total)` <- as.numeric(WBD.final$`Population ages 65 and above (total)`)
+WBD.final$`Population growth (annual %)` <- as.numeric(WBD.final$`Population growth (annual %)`)
+WBD.final$`Start-up procedures to register a business (number)` <- as.numeric(WBD.final$`Start-up procedures to register a business (number)`)
+WBD.final$`Urban population growth (annual %)` <- as.numeric(WBD.final$`Urban population growth (annual %)`)
+WBD.final$`Urban population (% of total population)` <- as.numeric(WBD.final$`Urban population (% of total population)`)
 
 str(WBD.final)
 
-# Construct logs gor large numbers such as GDP and Pop over 65
+# Construct logs for large numbers such as GDP and Pop over 65
 WBD.finalm = WBD.final
 WBD.finalm[,10] = log(WBD.final[,10]) #GDP {log}
 WBD.finalm[,11] = log(WBD.final[,11]) #GDP {log}
